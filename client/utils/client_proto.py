@@ -16,7 +16,6 @@ class ClientAuth(ConvertMixin, DbInterfaceMixin):
 
     def authenticate(self):
 
-        # check user in DB
         if self.username and self.password:
             usr = self.get_client_by_username(self.username)
             dk = pbkdf2_hmac('sha256', self.password.encode('utf-8'),
@@ -32,7 +31,6 @@ class ClientAuth(ConvertMixin, DbInterfaceMixin):
             else:
                 print('new user')
                 self.add_client(self.username, hashed_password)
-                # add client's history row
                 self.add_client_history(self.username)
                 return True
         else:
@@ -54,6 +52,7 @@ class ChatClientProtocol(Protocol, ConvertMixin, DbInterfaceMixin):
         self.output = None
 
     def connection_made(self, transport):
+
         self.sockname = transport.get_extra_info("sockname")
         print(f"1 - {self.sockname}")
         self.transport = transport
@@ -62,11 +61,13 @@ class ChatClientProtocol(Protocol, ConvertMixin, DbInterfaceMixin):
         self.conn_is_open = True
 
     def send_auth(self, user, password):
+
         if user and password:
             self.transport.write(
                 self._dict_to_bytes(self.jim.auth(user, password)))
 
     def data_received(self, data):
+
         msg = self._bytes_to_dict(data)
         if msg:
             try:
@@ -91,6 +92,7 @@ class ChatClientProtocol(Protocol, ConvertMixin, DbInterfaceMixin):
                 print(e)
 
     async def get_from_console(self):
+
         while not self.conn_is_open:
             pass
 
@@ -101,11 +103,10 @@ class ChatClientProtocol(Protocol, ConvertMixin, DbInterfaceMixin):
         while True:
             content = await self.loop.run_in_executor(None,
                                                       input)
-
             print(f"3 - {content}")
 
-
     def output_to_console(self, data):
+
         _data = data
         print(f"4 - {_data}")
 

@@ -6,11 +6,13 @@ from client.database.models import Client, History
 
 class ClientMessages:
     def __init__(self, conn_string, base, echo):
+
         self.dal = DataAccessLayer(conn_string, base, echo=echo)
         self.dal.connect()
         self.dal.session = self.dal.Session()
 
     def add_client(self, username, password, info=None):
+
         if self.get_client_by_username(username):
             return 'Пользователь {} уже существует'.format(username)
         else:
@@ -20,11 +22,13 @@ class ClientMessages:
             print('Добавлен пользователь: {}'.format(new_user))
 
     def get_client_by_username(self, username):
+
         client = self.dal.session.query(Client).filter(
             Client.username == username).first()
         return client
 
     def add_client_history(self, client_username, ip_addr='8.8.8.8'):
+
         client = self.get_client_by_username(client_username)
         if client:
             new_history = History(ip_addr=ip_addr, client_id=client.id)
@@ -39,6 +43,7 @@ class ClientMessages:
         return 'Пользователь {} не существует'.format(client_username)
 
     def set_user_online(self, client_username):
+
         client = self.get_client_by_username(client_username)
         if client:
             client.online_status = True

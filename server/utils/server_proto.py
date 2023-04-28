@@ -13,6 +13,7 @@ class ChatServerProtocol(Protocol, ConvertMixin, DbInterfaceMixin):
         self.connections = connections
         self.users = users
         self.jim = JimServerMessage()
+
         self.user = None
         self.transport = None
 
@@ -54,7 +55,7 @@ class ChatServerProtocol(Protocol, ConvertMixin, DbInterfaceMixin):
         if _data:
             try:
 
-                if _data['action'] == 'presence':  # received presence msg
+                if _data['action'] == 'presence':
                     if _data['user']['account_name']:
 
                         print(self.user, _data['user']['status'])

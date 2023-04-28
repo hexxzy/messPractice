@@ -7,7 +7,7 @@ from server.server_config import ENCODING
 
 class DbInterfaceMixin:
     def __init__(self, db_path):
-        self._cm = ClientMessages(db_path, CBase, echo=False)  # init DB
+        self._cm = ClientMessages(db_path, CBase, echo=False)
 
     def add_client(self, username, info=None):
         return self._cm.add_client(username, info)
@@ -24,6 +24,7 @@ class DbInterfaceMixin:
 
 class ConvertMixin:
     def _dict_to_bytes(self, msg_dict):
+
         if isinstance(msg_dict, dict):
             jmessage = dumps(msg_dict)
             bmessage = jmessage.encode(ENCODING)
@@ -32,6 +33,7 @@ class ConvertMixin:
             raise TypeError
 
     def _bytes_to_dict(self, msg_bytes):
+
         if isinstance(msg_bytes, bytes):
 
             jmessage = msg_bytes.decode(ENCODING)

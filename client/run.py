@@ -1,8 +1,15 @@
 from argparse import ArgumentParser
-from asyncio import ensure_future, get_event_loop, run, create_task
+from asyncio import ensure_future, get_event_loop, run, create_task, set_event_loop
+
+import sys
+
+from PyQt5 import Qt, QtWidgets
+
+from quamash import QEventLoop
 
 from client.utils.client_proto import ChatClientProtocol, ClientAuth
 from client.client_config import DB_PATH, PORT
+from client.ui.windows import LoginWindow, ContactsWindow
 
 
 class ConsoleClientApp:
@@ -16,6 +23,7 @@ class ConsoleClientApp:
         loop = get_event_loop()
         print(f"ох 1 - {loop}")
 
+        # authentication process
         auth = ClientAuth(db_path=self.db_path)
         while True:
             usr = self.args["user"] or input('username: ')
@@ -41,13 +49,11 @@ class ConsoleClientApp:
         except ConnectionRefusedError:
             print('Error. wrong server')
             exit(1)
-
         try:
             task = loop.create_task(client_.get_from_console())
             print(f"ох 4 - {task}")
             tasks.append(task)
             loop.run_until_complete(task)
-
 
         except KeyboardInterrupt:
             pass
@@ -56,6 +62,23 @@ class ConsoleClientApp:
 
         finally:
             loop.close()
+
+
+class GuiClientApp:
+    def __init__(self, parsed_args, db_path):
+        self.args = parsed_args
+        self.db_path = db_path
+        self.ins = None
+
+    def main(self):
+
+        app = Qt.QApplication(sys.argv)
+        loop = QEventLoop(app)
+        set_event_loop(loop)
+        login_wnd = LoginWindow()
+
+        if login_wnd.exec_() == QtWidgets.QDialog.Accepted:
+            pass
 
 
 def parse_and_run():
@@ -72,6 +95,9 @@ def parse_and_run():
 
     if args['nogui']:
         a = ConsoleClientApp(args, DB_PATH)
+        a.main()
+    else:
+        a = GuiClientApp(args, DB_PATH)
         a.main()
 
 

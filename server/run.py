@@ -1,12 +1,16 @@
 from argparse import ArgumentParser
-from asyncio import get_event_loop
+from asyncio import get_event_loop, set_event_loop
+
+from quamash import QEventLoop
+from PyQt5 import Qt
+from sys import argv
 
 from server.server_config import DB_PATH, PORT
 from server.utils.server_proto import ChatServerProtocol
+from server.ui.windows import ServerMonitorWindow
 
 
 class ConsoleServerApp:
-
     def __init__(self, parsed_args, db_path):
         self.args = parsed_args
         self.db_path = db_path
@@ -34,20 +38,54 @@ class ConsoleServerApp:
         loop.close()
 
 
+class GuiServerApp:
+    def __init__(self, parsed_args, db_path):
+        self.args = parsed_args
+        self.db_path = db_path
+        self.ins = None
+
+    def main(self):
+        connections = dict()
+        users = dict()
+
+        self.ins = ChatServerProtocol(self.db_path, connections, users)
+
+        app = Qt.QApplication(argv)
+        loop = QEventLoop(app)
+        set_event_loop(loop)
+        wnd = ServerMonitorWindow()
+        wnd.show()
+
+        with loop:
+            coro = loop.create_server(lambda: self.ins, self.args["addr"], self.args["port"])
+            server = loop.run_until_complete(coro)
+
+            print('Serving on {}:{}'.format(*server.sockets[0].getsockname()))
+            try:
+                loop.run_forever()
+            except KeyboardInterrupt:
+                pass
+
+            server.close()
+            loop.run_until_complete(server.wait_closed())
+            loop.close()
+
+
 def parse_and_run():
     def parse_args():
         parser = ArgumentParser(description="Server settings")
         parser.add_argument("--addr", default="127.0.0.1", type=str)
         parser.add_argument("--port", default=PORT, type=int)
         parser.add_argument('--nogui', action='store_true')
-        print(parser.parse_args())
-        print(vars(parser.parse_args()))
         return vars(parser.parse_args())
 
     args = parse_args()
 
     if args['nogui']:
         a = ConsoleServerApp(args, DB_PATH)
+        a.main()
+    else:
+        a = GuiServerApp(args, DB_PATH)
         a.main()
 
 
