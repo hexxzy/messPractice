@@ -1,0 +1,5 @@
+/venv/
+/.idea/
+/server/__pycache__/
+/server/utils/__pycache__/
+/server/database/__pycache__/
