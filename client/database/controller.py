@@ -1,7 +1,8 @@
 from sqlalchemy.exc import IntegrityError
+from datetime import datetime
 
 from client.database.db_connector import DataAccessLayer
-from client.database.models import Client, History
+from client.database.models import Client, History, Contacts, Messages
 
 
 class ClientMessages:
@@ -49,3 +50,89 @@ class ClientMessages:
             client.online_status = True
             self.dal.session.commit()
         return 'Пользователь {} не существует'.format(client_username)
+
+    def add_contact(self, client_username, contact_username):
+        contact = self.get_client_by_username(contact_username)
+        if contact:
+            client = self.get_client_by_username(client_username)
+            if client:
+                new_contact = Contacts(client_id=client.id,
+                                       contact_id=contact.id)
+                try:
+                    self.dal.session.add(new_contact)
+                    self.dal.session.commit()
+                    print('Contact added: {}'.format(new_contact))
+                except IntegrityError as err:
+                    print('IntegrityError error: {}'.format(err))
+                    self.dal.session.rollback()
+            else:
+                return 'Client {} does not exists'.format(client_username)
+        else:
+            return 'Contact {} does not exists'.format(contact_username)
+
+    def del_contact(self, client_username, contact_username):
+        contact = self.get_client_by_username(contact_username)
+        if contact:
+            client = self.get_client_by_username(client_username)
+            if client:
+                remove_contact = self.dal.session.query(Contacts) \
+                    .filter((Contacts.client_id == client.id)
+                            & (Contacts.contact_id == contact.id)) \
+                    .first()
+                self.dal.session.delete(remove_contact)
+                self.dal.session.commit()
+                print('Contact removed: {}'.format(remove_contact))
+            else:
+                return 'Client {} does not exists'.format(client_username)
+        else:
+            return 'Contact {} does not exists'.format(contact_username)
+
+    def get_contacts(self, client_username):
+        client = self.get_client_by_username(client_username)
+        if client:
+            return self.dal.session.query(Contacts) \
+                .join(Client, Contacts.client_id == Client.id) \
+                .filter(Client.username == client_username).all()
+        return 'Client {} does not exists'.format(client_username)
+
+    def get_all_clients(self):
+        return self.dal.session.query(Client).all()
+
+    def get_client_history(self, client_username):
+        client = self.get_client_by_username(client_username)
+        if client:
+            return self.dal.session.query(History) \
+                .filter(History.client_id == client.id).all()
+        return 'Client {} does not exists'.format(client_username)
+
+    def set_user_offline(self, client_username):
+        client = self.get_client_by_username(client_username)
+        if client:
+            client.online_status = False
+        self.dal.session.commit()
+        return 'Client {} does not exists'.format(client_username)
+
+    def get_user_status(self, client_username):
+        client = self.get_client_by_username(client_username)
+        return client.online_status
+
+    def add_client_message(self, client_username, contact_username, text_msg):
+        client = self.get_client_by_username(client_username)
+        contact = self.get_client_by_username(contact_username)
+        if client and contact:
+            new_msg = Messages(client_id=client.id, contact_id=contact.id,
+                               message=text_msg, time=datetime.now())
+            try:
+                self.dal.session.add(new_msg)
+                self.dal.session.commit()
+                print('New message added: {}'.format(new_msg))
+            except IntegrityError as err:
+                print('IntegrityError error: {}'.format(err))
+                self.dal.session.rollback()
+        return 'Client {} does not exists'.format(client_username)
+
+    def get_client_messages(self, client_username):
+        client = self.get_client_by_username(client_username)
+        if client:
+            return self.dal.session.query(Messages).filter(Messages.client_id == client.id).all()
+        return 'Client {} does not exists'.format(client_username)
