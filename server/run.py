@@ -53,7 +53,7 @@ class GuiServerApp:
         app = Qt.QApplication(argv)
         loop = QEventLoop(app)
         set_event_loop(loop)
-        wnd = ServerMonitorWindow()
+        wnd = ServerMonitorWindow(server_instance=self.ins, parsed_args=self.arg)
         wnd.show()
 
         with loop:

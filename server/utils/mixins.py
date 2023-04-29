@@ -45,6 +45,8 @@ class DbInterfaceMixin:
     def get_user_status(self, client_username):
         return self._cm.get_user_status(client_username)
 
+    def add_client_message(self, client_username, contact_username, text_msg):
+        return self._cm.add_client_message(client_username, contact_username, text_msg)
 
 class ConvertMixin:
     def _dict_to_bytes(self, msg_dict):

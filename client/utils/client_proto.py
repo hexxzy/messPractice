@@ -60,6 +60,20 @@ class ChatClientProtocol(Protocol, ConvertMixin, DbInterfaceMixin):
         self.send_auth(self.user, self.password)
         self.conn_is_open = True
 
+    def connection_lost(self, exc):
+
+        try:
+            self.conn_is_open = False
+            for task in self.tasks:
+                task.cancel()
+
+        except:
+            pass
+
+        finally:
+            self.loop.stop()
+            self.loop.close()
+
     def send_auth(self, user, password):
 
         if user and password:
@@ -111,3 +125,29 @@ class ChatClientProtocol(Protocol, ConvertMixin, DbInterfaceMixin):
         print(f"4 - {_data}")
 
         stdout.write(_data)
+
+    def send(self, request):
+        if request:
+            msg = self._dict_to_bytes(request)
+            self.transport.write(msg)
+
+    def send_msg(self, to_user, content):
+        if to_user and content:
+            request = self.jim.message(self.user, to_user, content)
+            self.transport.write(self._dict_to_bytes(request))
+
+    def get_from_gui(self):
+        self.output = self.output_to_gui
+
+    def output_to_gui(self, msg, response=False):
+        try:
+            if self.gui_instance:
+                if response:
+                    self.gui_instance.is_auth = True
+
+                if self.user == msg['to']:
+                    self.gui_instance.chat_ins()
+
+        except Exception as e:
+            print(e)
+
